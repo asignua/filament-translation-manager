@@ -170,7 +170,7 @@ class QuickTranslate extends Page
             $text = $record->textFor($code) ?? $files->value($record->group, $record->key, $code);
 
             if ($text !== null) {
-                $sources[Locales::label($code)] = $text;
+                $sources[$code] = $text;
             }
         }
 
