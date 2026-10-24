@@ -30,8 +30,10 @@ same gate and the same config keys, so an existing project moves over without to
 ## Screenshots
 
 ![The translations table](https://raw.githubusercontent.com/asignua/filament-translation-manager/main/art/table.jpg)
-![Missing in a language](https://raw.githubusercontent.com/asignua/filament-translation-manager/main/art/missing-filter.jpg)
+![The language switcher in the top bar](https://raw.githubusercontent.com/asignua/filament-translation-manager/main/art/switcher.jpg)
 ![Quick translate](https://raw.githubusercontent.com/asignua/filament-translation-manager/main/art/quick-translate.jpg)
+
+![Quick translate in dark mode](https://raw.githubusercontent.com/asignua/filament-translation-manager/main/art/quick-translate-dark.jpg)
 ![The edit form](https://raw.githubusercontent.com/asignua/filament-translation-manager/main/art/edit.jpg)
 
 ## Requirements

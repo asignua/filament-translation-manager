@@ -1,0 +1,64 @@
+{
+    "base": "http://host.docker.internal:8777",
+    "login": {
+        "path": "/admin/login",
+        "email": "emma@example.com",
+        "password": "password"
+    },
+    "shots": [
+        {
+            "path": "/admin/translations",
+            "out": "table.jpg"
+        },
+        {
+            "path": "/admin/translations",
+            "out": "cover-source.jpg",
+            "stamp": false
+        },
+        {
+            "path": "/admin/quick-translate",
+            "out": "quick-translate.jpg"
+        },
+        {
+            "path": "/admin/quick-translate",
+            "out": "quick-translate-dark.jpg",
+            "theme": "dark"
+        },
+        {
+            "path": "/admin/translations/1/edit",
+            "out": "edit.jpg"
+        },
+        {
+            "path": "/admin/translations",
+            "out": "switcher.jpg",
+            "actions": [
+                {
+                    "click": [
+                        0.5,
+                        0.5
+                    ],
+                    "in": ".fi-tm-switcher, [class*=switcher] >> nth=0"
+                },
+                {
+                    "wait": 500
+                },
+                {
+                    "shot": "switcher.jpg"
+                }
+            ]
+        }
+    ],
+    "covers": [
+        {
+            "html": "../../scripts/art/cover.html",
+            "out": "cover.jpg",
+            "query": {
+                "title": "Translations your team can edit",
+                "lead": "Database translations for Filament 5: scan the code for keys, see what is missing per language, and translate one string after another \u2014 a successor of kenepa/translation-manager.",
+                "chips": "Scan __() & @lang|Missing per language|Quick translate|JSON import / export",
+                "shot": "../../filament-translation-manager/art/cover-source.jpg",
+                "crop": "680,140,2160,1260"
+            }
+        }
+    ]
+}
