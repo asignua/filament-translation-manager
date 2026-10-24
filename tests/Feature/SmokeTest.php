@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Asignua\FilamentTranslationManager\Tests\Feature;
 
-use Asignua\FilamentTranslationManager\TranslationManagerPlugin;
+use Asignua\FilamentTranslationManager\Models\Translation;
+use Asignua\FilamentTranslationManager\Resources\TranslationResource;
 use Asignua\FilamentTranslationManager\Tests\TestCase;
+use Asignua\FilamentTranslationManager\TranslationManagerPlugin;
 use Filament\Facades\Filament;
 
 class SmokeTest extends TestCase
@@ -19,12 +21,19 @@ class SmokeTest extends TestCase
     {
         $panel = Filament::getPanel('admin');
 
-        $this->assertTrue($panel->hasPlugin('asignua-filament-translation-manager'));
-        $this->assertInstanceOf(TranslationManagerPlugin::class, $panel->getPlugin('asignua-filament-translation-manager'));
+        $this->assertTrue($panel->hasPlugin(TranslationManagerPlugin::ID));
+        $this->assertInstanceOf(TranslationManagerPlugin::class, $panel->getPlugin(TranslationManagerPlugin::ID));
+        $this->assertContains(TranslationResource::class, $panel->getResources());
     }
 
     public function test_the_translations_are_loaded(): void
     {
-        $this->assertSame('Sample', __('filament-translation-manager::filament-translation-manager.sample'));
+        $this->assertSame('Translations', __('filament-translation-manager::filament-translation-manager.resource.plural'));
+    }
+
+    public function test_the_model_is_served_to_spatie_and_the_table_is_there(): void
+    {
+        $this->assertSame(Translation::class, config('translation-loader.model'));
+        $this->assertSame(0, Translation::query()->count());
     }
 }

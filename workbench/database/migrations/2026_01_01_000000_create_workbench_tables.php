@@ -10,12 +10,18 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // `workbench:build` runs Testbench's own users migration first; the tests run only this one.
+        if (Schema::hasTable('users')) {
+            Schema::dropIfExists('users');
+        }
+
         Schema::create('users', function (Blueprint $table): void {
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
             $table->boolean('is_active')->default(true);
+            $table->string('locale', 12)->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

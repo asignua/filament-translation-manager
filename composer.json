@@ -1,7 +1,17 @@
 {
     "name": "asignua/filament-translation-manager",
-    "description": "TODO: one-sentence description of Translation Manager for Filament.",
-    "keywords": ["filament", "filament-plugin", "laravel"],
+    "description": "Database-backed translation manager for Filament 5: edit, search, scan and quick-translate every __() string per locale, with a topbar language switcher. Successor of kenepa/translation-manager, built on spatie/laravel-translation-loader.",
+    "keywords": [
+        "filament",
+        "filament-plugin",
+        "laravel",
+        "translations",
+        "translation-manager",
+        "localization",
+        "i18n",
+        "spatie",
+        "filament-translation-manager"
+    ],
     "homepage": "https://github.com/asignua/filament-translation-manager",
     "support": {
         "issues": "https://github.com/asignua/filament-translation-manager/issues",
@@ -19,7 +29,9 @@
         "php": "^8.3",
         "filament/filament": "^5.0",
         "illuminate/contracts": "^12.0|^13.0",
-        "spatie/laravel-package-tools": "^1.16"
+        "spatie/laravel-package-tools": "^1.16",
+        "spatie/laravel-translation-loader": "^2.8",
+        "symfony/finder": "^7.0|^8.0"
     },
     "require-dev": {
         "larastan/larastan": "^3.0",
@@ -36,7 +48,8 @@
         "psr-4": {
             "Asignua\\FilamentTranslationManager\\Tests\\": "tests/",
             "Workbench\\App\\": "workbench/app/",
-            "Workbench\\Database\\Factories\\": "workbench/database/factories/"
+            "Workbench\\Database\\Factories\\": "workbench/database/factories/",
+            "Workbench\\Database\\Seeders\\": "workbench/database/seeders/"
         }
     },
     "extra": {

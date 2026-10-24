@@ -27,7 +27,13 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->plugin(TranslationManagerPlugin::make())
+            ->plugin(TranslationManagerPlugin::make()
+                ->locales([
+                    ['code' => 'en', 'name' => 'English', 'flag' => 'gb'],
+                    ['code' => 'uk', 'name' => 'Українська', 'flag' => 'ua'],
+                    ['code' => 'de', 'name' => 'Deutsch', 'flag' => 'de'],
+                ])
+                ->languageSwitcher())
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Asignua\FilamentTranslationManager\Tests;
 
+use Asignua\FilamentTranslationManager\Support\Locales;
 use Asignua\FilamentTranslationManager\TranslationManagerServiceProvider;
 use BladeUI\Heroicons\BladeHeroiconsServiceProvider;
 use BladeUI\Icons\BladeIconsServiceProvider;
@@ -21,8 +22,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 use RyanChandler\BladeCaptureDirective\BladeCaptureDirectiveServiceProvider;
+use Spatie\TranslationLoader\TranslationServiceProvider as SpatieTranslationServiceProvider;
 use Workbench\App\Models\User;
 use Workbench\App\Providers\AdminPanelProvider;
+use Workbench\App\Providers\WorkbenchServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
@@ -31,6 +34,13 @@ abstract class TestCase extends Orchestra
     protected function setUp(): void
     {
         parent::setUp();
+
+        // The workbench panel overrides the locales statically; start every test from the plugin's own (en, uk, de).
+        Locales::override([
+            ['code' => 'en', 'name' => 'English', 'flag' => 'gb'],
+            ['code' => 'uk', 'name' => 'Українська', 'flag' => 'ua'],
+            ['code' => 'de', 'name' => 'Deutsch', 'flag' => 'de'],
+        ]);
 
         $this->actingAs(User::factory()->create());
         Filament::setCurrentPanel('admin');
@@ -52,7 +62,9 @@ abstract class TestCase extends Orchestra
             SupportServiceProvider::class,
             TablesServiceProvider::class,
             WidgetsServiceProvider::class,
+            SpatieTranslationServiceProvider::class,
             TranslationManagerServiceProvider::class,
+            WorkbenchServiceProvider::class,
             AdminPanelProvider::class,
         ];
     }
@@ -61,7 +73,17 @@ abstract class TestCase extends Orchestra
     {
         $app['config']->set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
         $app['config']->set('database.default', 'testing');
+        $app['config']->set('cache.default', 'array');
+        $app['config']->set('app.locale', 'en');
+        $app['config']->set('app.fallback_locale', 'en');
         $app['config']->set('auth.providers.users.model', User::class);
+    }
+
+    protected function tearDown(): void
+    {
+        Locales::override(null);
+
+        parent::tearDown();
     }
 
     protected function defineDatabaseMigrations(): void
