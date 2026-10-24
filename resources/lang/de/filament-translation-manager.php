@@ -20,10 +20,16 @@ return [
         'file_default' => 'Standard aus Datei: :text',
     ],
     'filters' => [
+        'orphaned' => 'Nicht im Code gefunden',
+        'confirmed' => 'Bestätigt',
         'missing_in' => 'Fehlt in',
         'missing_any' => 'Fehlt in irgendeiner Sprache',
     ],
     'actions' => [
+        'confirm' => 'Bestätigen',
+        'unconfirm' => 'Bestätigung entfernen',
+        'prune_mark' => 'Auch nicht mehr gefundene Zeilen markieren',
+        'prune_mark_help' => 'Markiert Zeilen, deren Schlüssel nicht mehr im Code und in den Lang-Dateien vorkommt (sie bleiben in der Tabelle, die Markierung verschwindet, wenn der Schlüssel zurückkommt). Es wird nichts gelöscht.',
         'quick_translate' => 'Schnell übersetzen',
         'scan' => 'Code scannen',
         'scan_description' => 'Findet __(), trans(), trans_choice(), @lang und Lang::get() sowie Ihre Sprachdateien und legt fehlende Zeilen an. Bearbeitete Texte werden nie überschrieben.',
@@ -39,6 +45,7 @@ return [
         'file' => 'Datei',
     ],
     'scan' => [
+        'summary_marks' => ':marked als nicht gefunden markiert, :restored wiederhergestellt.',
         'done' => 'Scan abgeschlossen',
         'summary' => ':found gefunden, :created erstellt, :filled ergänzt, :pruned gelöscht, :skipped übersprungen.',
     ],
@@ -59,5 +66,11 @@ return [
     ],
     'switcher' => [
         'label' => 'Sprache',
+    ],
+    'status' => [
+        'label' => 'Status',
+        'ok' => 'OK',
+        'missing' => 'Fehlt',
+        'orphaned' => 'Nicht im Code',
     ],
 ];

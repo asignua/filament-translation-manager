@@ -10,7 +10,7 @@ use Illuminate\Console\Command;
 class ScanCommand extends Command
 {
     protected $signature = 'translation-manager:scan
-        {--prune : Delete rows whose key no longer exists in the code or the lang files}
+        {--prune : Mark (config prune.mode = mark) or delete (delete) rows whose key no longer exists in the code or the lang files}
         {--dry-run : Only report, write nothing}';
 
     protected $description = 'Find __() / trans() / @lang strings in the code and lang files and add the missing rows to the translation table';
@@ -20,13 +20,7 @@ class ScanCommand extends Command
         $dry = (bool) $this->option('dry-run');
         $result = Synchronizer::make()->sync((bool) $this->option('prune'), $dry);
 
-        $this->info(($dry ? '[dry run] ' : '').__('filament-translation-manager::filament-translation-manager.scan.summary', [
-            'found' => $result->found,
-            'created' => $result->created,
-            'filled' => $result->filled,
-            'pruned' => $result->pruned,
-            'skipped' => $result->skipped,
-        ]));
+        $this->info(($dry ? '[dry run] ' : '').$result->summary());
 
         return self::SUCCESS;
     }

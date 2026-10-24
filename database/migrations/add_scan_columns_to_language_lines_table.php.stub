@@ -10,11 +10,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (Schema::hasColumn('language_lines', 'created_by_scan')) {
+        if (Schema::hasColumn($this->table(), 'created_by_scan')) {
             return;
         }
 
-        Schema::table('language_lines', function (Blueprint $table): void {
+        Schema::table($this->table(), function (Blueprint $table): void {
             // Set by the scanner: the row was created by `translation-manager:scan` (`--prune` only touches those).
             $table->boolean('created_by_scan')->default(false);
         });
@@ -22,8 +22,13 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('language_lines', function (Blueprint $table): void {
+        Schema::table($this->table(), function (Blueprint $table): void {
             $table->dropColumn('created_by_scan');
         });
+    }
+
+    private function table(): string
+    {
+        return (string) config('filament-translation-manager.table', 'language_lines');
     }
 };

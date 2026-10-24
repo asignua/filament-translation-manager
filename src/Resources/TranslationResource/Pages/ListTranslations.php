@@ -61,26 +61,21 @@ class ListTranslations extends ListRecords
             ->modalDescription(__('filament-translation-manager::filament-translation-manager.actions.scan_description'))
             ->schema([
                 Toggle::make('prune')
-                    ->label(__('filament-translation-manager::filament-translation-manager.actions.prune'))
-                    ->helperText(__('filament-translation-manager::filament-translation-manager.actions.prune_help'))
-                    ->visible(fn (): bool => TranslationManagerPlugin::resolve()->canDelete()),
+                    ->label(fn (): string => __('filament-translation-manager::filament-translation-manager.actions.'.(Synchronizer::marksOrphans() ? 'prune_mark' : 'prune')))
+                    ->helperText(fn (): string => __('filament-translation-manager::filament-translation-manager.actions.'.(Synchronizer::marksOrphans() ? 'prune_mark_help' : 'prune_help')))
+                    // Marking deletes nothing, so it needs no delete gate.
+                    ->visible(fn (): bool => Synchronizer::marksOrphans() || TranslationManagerPlugin::resolve()->canDelete()),
             ])
             ->action(function (array $data): void {
                 $this->guard();
 
-                $prune = (bool) ($data['prune'] ?? false) && TranslationManagerPlugin::resolve()->canDelete();
+                $prune = (bool) ($data['prune'] ?? false) && (Synchronizer::marksOrphans() || TranslationManagerPlugin::resolve()->canDelete());
                 $result = Synchronizer::make()->sync($prune);
 
                 Notification::make()
                     ->success()
                     ->title(__('filament-translation-manager::filament-translation-manager.scan.done'))
-                    ->body(__('filament-translation-manager::filament-translation-manager.scan.summary', [
-                        'found' => $result->found,
-                        'created' => $result->created,
-                        'filled' => $result->filled,
-                        'pruned' => $result->pruned,
-                        'skipped' => $result->skipped,
-                    ]))
+                    ->body($result->summary())
                     ->send();
             });
     }

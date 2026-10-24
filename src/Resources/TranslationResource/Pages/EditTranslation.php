@@ -16,7 +16,7 @@ class EditTranslation extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [DeleteAction::make()->visible(static fn (): bool => TranslationResource::canDeleteAny())];
+        return [DeleteAction::make()->visible(static fn (): bool => static::getResource()::canDeleteAny())];
     }
 
     /**

@@ -20,10 +20,16 @@ return [
         'file_default' => 'Bestandswaarde: :text',
     ],
     'filters' => [
+        'orphaned' => 'Niet gevonden in code',
+        'confirmed' => 'Bevestigd',
         'missing_in' => 'Ontbreekt in',
         'missing_any' => 'Ontbreekt in een taal',
     ],
     'actions' => [
+        'confirm' => 'Bevestigen',
+        'unconfirm' => 'Bevestiging intrekken',
+        'prune_mark' => 'Ook niet meer gevonden rijen markeren',
+        'prune_mark_help' => 'Markeert rijen waarvan de sleutel niet meer in de code en de lang-bestanden staat (ze blijven in de tabel en de markering verdwijnt als de sleutel terugkomt). Er wordt niets verwijderd.',
         'quick_translate' => 'Snel vertalen',
         'scan' => 'Code scannen',
         'scan_description' => 'Vindt __(), trans(), trans_choice(), @lang en Lang::get() en je taalbestanden en voegt ontbrekende rijen toe. Bewerkte teksten worden nooit overschreven.',
@@ -39,6 +45,7 @@ return [
         'file' => 'Bestand',
     ],
     'scan' => [
+        'summary_marks' => ':marked gemarkeerd als niet gevonden, :restored hersteld.',
         'done' => 'Scan voltooid',
         'summary' => ':found gevonden, :created aangemaakt, :filled aangevuld, :pruned verwijderd, :skipped overgeslagen.',
     ],
@@ -59,5 +66,11 @@ return [
     ],
     'switcher' => [
         'label' => 'Taal',
+    ],
+    'status' => [
+        'label' => 'Status',
+        'ok' => 'OK',
+        'missing' => 'Ontbreekt',
+        'orphaned' => 'Niet in code',
     ],
 ];

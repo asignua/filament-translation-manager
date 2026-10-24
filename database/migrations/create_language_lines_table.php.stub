@@ -10,12 +10,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // The same table spatie/laravel-translation-loader publishes. Skipped when it already exists.
-        if (Schema::hasTable('language_lines')) {
+        // The same table spatie/laravel-translation-loader publishes (the name comes from the plugin's `table` config). Skipped when it already exists.
+        if (Schema::hasTable($this->table())) {
             return;
         }
 
-        Schema::create('language_lines', function (Blueprint $table): void {
+        Schema::create($this->table(), function (Blueprint $table): void {
             $table->id();
             // Index key length (utf8mb4, 4 bytes per character): the unique pair is (255 + 255) * 4 = 2040 bytes,
             // below the 3072 limit of InnoDB. A test guards it - SQLite would not complain.
@@ -31,6 +31,11 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('language_lines');
+        Schema::dropIfExists($this->table());
+    }
+
+    private function table(): string
+    {
+        return (string) config('filament-translation-manager.table', 'language_lines');
     }
 };

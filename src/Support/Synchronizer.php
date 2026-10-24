@@ -35,7 +35,17 @@ final class Synchronizer
     }
 
     /**
-     * @param bool $prune  delete rows that no longer exist in code or lang files
+     * Whether `--prune` marks rows (`orphaned_at`) instead of deleting them: config `prune.mode`, and only when the
+     * status columns are in use.
+     */
+    public static function marksOrphans(): bool
+    {
+        return config('filament-translation-manager.prune.mode', 'mark') === 'mark' && Translation::statusEnabled();
+    }
+
+    /**
+     * @param bool $prune  handle rows that no longer exist in code or lang files: mark them `orphaned_at` (and clear the
+     *                     mark of the ones found again) or delete them, per config `prune.mode`
      * @param bool $dryRun count only, write nothing
      */
     public function sync(bool $prune = false, bool $dryRun = false): SyncResult
@@ -44,10 +54,13 @@ final class Synchronizer
         $locales = Locales::codes();
         $default = Locales::default();
         $fillDefault = (bool) config('filament-translation-manager.scan.fill_default_locale_with_key', true);
+        $fillAll = (bool) config('filament-translation-manager.scan.fill_all_locales_with_key', false);
+        $skipGroupLike = (bool) config('filament-translation-manager.scan.skip_group_like_keys', false);
         $includeFiles = (bool) config('filament-translation-manager.scan.include_lang_files', true);
+        $managed = $model::managedGroups();
 
         /** @var \Illuminate\Database\Eloquent\Collection<int, Translation> $existing */
-        $existing = $model::query()->get();
+        $existing = $model::query()->inManagedGroups()->get();
         $rows = [];
 
         foreach ($existing as $row) {
@@ -67,9 +80,13 @@ final class Synchronizer
         foreach ($this->scanner->literals() as $literal) {
             $pair = $resolver->resolve($literal);
 
-            if ($pair === null || strlen($pair[1]) > self::MAX_KEY_LENGTH) {
+            if ($pair === null || strlen($pair[1]) > self::MAX_KEY_LENGTH || ($skipGroupLike && $pair[0] === '*' && KeyResolver::looksLikeGroupKey($pair[1]))) {
                 $skipped++;
 
+                continue;
+            }
+
+            if ($managed !== null && !in_array($pair[0], $managed, true)) {
                 continue;
             }
 
@@ -79,6 +96,10 @@ final class Synchronizer
         if ($includeFiles) {
             foreach ($locales as $locale) {
                 foreach ($this->files->lines($locale) as $group => $lines) {
+                    if ($managed !== null && !in_array((string) $group, $managed, true)) {
+                        continue;
+                    }
+
                     foreach ($lines as $key => $value) {
                         if (strlen($key) > self::MAX_KEY_LENGTH) {
                             $skipped++;
@@ -108,7 +129,8 @@ final class Synchronizer
                     continue;
                 }
 
-                $value = $fileTexts[$locale] ?? ($group === '*' && $fillDefault && $locale === $default ? $key : null);
+                $placeholder = $group === '*' && (($fillDefault && $locale === $default) || $fillAll);
+                $value = $fileTexts[$locale] ?? ($placeholder ? $key : null);
 
                 if ($value !== null && $value !== '') {
                     $text[$locale] = $value;
@@ -138,8 +160,36 @@ final class Synchronizer
         }
 
         $pruned = 0;
+        $marked = 0;
+        $restored = 0;
 
-        if ($prune) {
+        if (Translation::statusEnabled()) {
+            // A key that is found again is no longer an orphan, with or without --prune.
+            foreach ($rows as $id => $row) {
+                if (isset($found[$id]) && $row->orphaned_at !== null) {
+                    $restored++;
+
+                    if (!$dryRun) {
+                        $row->orphaned_at = null;
+                        $row->save();
+                    }
+                }
+            }
+        }
+
+        if ($prune && self::marksOrphans()) {
+            // Non-destructive: every scanned row takes part (not only the ones the scanner created) and nothing is deleted.
+            foreach ($rows as $id => $row) {
+                if (!isset($found[$id]) && $row->orphaned_at === null) {
+                    $marked++;
+
+                    if (!$dryRun) {
+                        $row->orphaned_at = now();
+                        $row->save();
+                    }
+                }
+            }
+        } elseif ($prune) {
             $onlyScanned = (bool) config('filament-translation-manager.prune.only_scanned', true);
 
             foreach ($rows as $id => $row) {
@@ -155,7 +205,7 @@ final class Synchronizer
             }
         }
 
-        return new SyncResult(count($found), $created, $filled, $pruned, $skipped);
+        return new SyncResult(count($found), $created, $filled, $pruned, $skipped, $marked, $restored);
     }
 
     private function id(string $group, string $key): string

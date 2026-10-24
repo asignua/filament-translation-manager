@@ -20,10 +20,16 @@ return [
         'file_default' => 'Dosyadaki değer: :text',
     ],
     'filters' => [
+        'orphaned' => 'Kodda bulunamadı',
+        'confirmed' => 'Onaylananlar',
         'missing_in' => 'Eksik olduğu dil',
         'missing_any' => 'Herhangi bir dilde eksik',
     ],
     'actions' => [
+        'confirm' => 'Onayla',
+        'unconfirm' => 'Onayı kaldır',
+        'prune_mark' => 'Artık bulunmayan satırları da işaretle',
+        'prune_mark_help' => 'Anahtarı kodda ve lang dosyalarında artık bulunmayan satırları işaretler (tabloda kalırlar, anahtar geri gelince işaret kalkar). Hiçbir şey silinmez.',
         'quick_translate' => 'Hızlı çeviri',
         'scan' => 'Kodu tara',
         'scan_description' => '__(), trans(), trans_choice(), @lang ve Lang::get() metinlerini ve dil dosyalarınızı bulur, eksik satırları ekler. Düzenlediğiniz metinlerin üzerine asla yazılmaz.',
@@ -39,6 +45,7 @@ return [
         'file' => 'Dosya',
     ],
     'scan' => [
+        'summary_marks' => ':marked bulunamadı olarak işaretlendi, :restored geri alındı.',
         'done' => 'Tarama tamamlandı',
         'summary' => ':found bulundu, :created oluşturuldu, :filled tamamlandı, :pruned silindi, :skipped atlandı.',
     ],
@@ -59,5 +66,11 @@ return [
     ],
     'switcher' => [
         'label' => 'Dil',
+    ],
+    'status' => [
+        'label' => 'Durum',
+        'ok' => 'Tamam',
+        'missing' => 'Eksik',
+        'orphaned' => 'Kodda yok',
     ],
 ];

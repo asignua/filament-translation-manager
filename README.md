@@ -52,7 +52,8 @@ php artisan migrate
 
 The migrations are publishable stubs. The first creates the `language_lines` table the way spatie's own migration does, and
 **does nothing when the table already exists**, so do not also publish spatie's. The second adds the column `--prune` uses to
-tell scanner-created rows from yours. Optionally publish the config (`--tag=filament-translation-manager-config`).
+tell scanner-created rows from yours, the third the nullable `confirmed_at` / `orphaned_at` status columns (skip it and set
+`status.enabled` to `false` if you do not want the status). Optionally publish the config (`--tag=filament-translation-manager-config`).
 
 Register the plugin on your panel and tell it the languages:
 
@@ -84,11 +85,19 @@ string it has not seen. For a PHP group (`messages.checkout.title`) the file tex
 (`__('Add to basket')`) the key itself becomes the text of the default language. Languages without a text stay **missing**.
 
 - It is additive: an existing text is never overwritten, a gap in an existing row is filled from the lang files.
-- `--dry-run` only reports. `--prune` (the "Also delete rows no longer found" toggle in the panel, which needs the delete gate)
-  removes rows whose key is gone from the code **and** the lang files. By default only rows the scanner created itself
+- `--dry-run` only reports. `--prune` acts on rows whose key is gone from the code **and** the lang files. By default
+  (`prune.mode` = `mark`) it only **marks** them (`orphaned_at`, shown as "Not in code" and filterable); the mark is cleared
+  by the next scan that finds the key again, and nothing is deleted. With `prune.mode` = `delete` (the "Also delete rows no
+  longer found" toggle needs the delete gate) it deletes them, by default only rows the scanner created itself
   (`prune.only_scanned`), never ones you typed. Strings built at run time (`__($key)`, `__('a'.$b)`) cannot be found: review before pruning.
 - The scan skips what the database loader cannot serve: namespaced keys (`pkg::group.key`) and keys over 255 characters.
   They are counted as "skipped".
+
+**Status.** Every row has a badge: **OK**, **Missing** (a text is absent in a configured language) or **Not in code** (the last
+scan did not find the key). A text that equals the key counts as missing too (`missing.value_equal_to_key`, on by default):
+that is the placeholder a scan leaves for a string nobody translated yet. When such a text is right on purpose (a brand
+name, a word that is the same in every language) press **Confirm** in the row menu; a confirmed row is never missing.
+Filters: Missing in…, Missing in any locale, Not found in code, Confirmed.
 
 **Find the gaps.** Filter **Missing in** and pick a language, or use **Missing in any language**. The navigation badge
 (`->navigationBadge()`) shows how many rows are incomplete.
@@ -125,9 +134,36 @@ TranslationManagerPlugin::make()
 `locales` also accepts a list of codes (`['en', 'uk']`; the name comes from `intl`) or a `code => name` map. Without it the
 plugin uses `app.locale` and `app.fallback_locale`.
 
-Config keys: `locales` (alias `available_locales`), `default_locale`, `model`, `gate`, `delete_gate`, `language_switcher`,
-`language_switcher_options.{user_column,session_key}`, `quick_translate.enabled`, `scan.{paths,extensions,exclude,include_lang_files,fill_default_locale_with_key}`,
-`prune.only_scanned`, `navigation.{group,sort,icon,badge}`.
+Config keys: `table`, `groups`, `status.enabled`, `missing.value_equal_to_key`, `locales` (alias `available_locales`), `default_locale`, `model`, `gate`, `delete_gate`, `language_switcher`,
+`language_switcher_options.{user_column,session_key}`, `quick_translate.enabled`, `scan.{paths,extensions,exclude,include_lang_files,fill_default_locale_with_key,fill_all_locales_with_key,skip_group_like_keys}`,
+`prune.{mode,only_scanned}`, `navigation.{group,sort,icon,badge}`.
+
+### Wrapping the plugin in a host
+
+A host with its own table prefix, its own role system or only some of the groups configures, not forks:
+
+```php
+config([
+    'filament-translation-manager.table' => 'ee_translations',            // default model reads it
+    'filament-translation-manager.model' => App\Models\Translation::class, // may extend the plugin model
+    'filament-translation-manager.groups' => ['*'],                       // only JSON-style keys: list, scan, quick translate
+    'filament-translation-manager.scan.paths' => [base_path('app'), base_path('resources/views')],
+    'filament-translation-manager.scan.include_lang_files' => false,
+]);
+
+Locales::resolveUsing(fn () => MyLanguages::all());  // read on every call; same shapes as ->locales()
+
+$panel->plugin(TranslationManagerPlugin::make()
+    ->resource(MyTranslationResource::class)         // or ->resource(false) when the panel discovers it
+    ->authorize(fn () => $user->isAdmin())
+    ->navigationGroup(fn () => __('System'))->navigationLabel(fn () => __('Translations')));
+```
+
+`MyTranslationResource` extends `TranslationResource` and may override `canCreate()`, `scopeQuery(Builder)`, `extraColumns()` and
+`extraRecordActions()`; give it its own pages (small subclasses with `$resource` set) when you add header actions. The model may
+override `getTable()`; the status and "missing" logic live in scopes (`missingIn`, `missingInAny`, `orphaned`, `confirmed`,
+`inManagedGroups`) so a host query can reuse them. JSON paths are written as `text->uk` and compiled by the query builder per
+driver, so the same code runs on SQLite, MySQL/MariaDB and PostgreSQL (`SqlGrammarTest` checks the generated SQL).
 
 ### The model
 

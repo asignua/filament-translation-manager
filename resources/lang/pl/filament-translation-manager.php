@@ -20,10 +20,16 @@ return [
         'file_default' => 'W pliku: :text',
     ],
     'filters' => [
+        'orphaned' => 'Nie znaleziono w kodzie',
+        'confirmed' => 'Potwierdzone',
         'missing_in' => 'Brak w języku',
         'missing_any' => 'Brak w dowolnym języku',
     ],
     'actions' => [
+        'confirm' => 'Potwierdź',
+        'unconfirm' => 'Cofnij potwierdzenie',
+        'prune_mark' => 'Oznacz też wiersze, których już nie ma',
+        'prune_mark_help' => 'Oznacza wiersze, których klucza nie ma już w kodzie ani w plikach lang (zostają w tabeli, a znacznik znika, gdy klucz wróci). Nic nie jest usuwane.',
         'quick_translate' => 'Szybkie tłumaczenie',
         'scan' => 'Skanuj kod',
         'scan_description' => 'Znajduje ciągi __(), trans(), trans_choice(), @lang i Lang::get() oraz Twoje pliki lang i dodaje brakujące wiersze. Edytowane teksty nigdy nie są nadpisywane.',
@@ -39,6 +45,7 @@ return [
         'file' => 'Plik',
     ],
     'scan' => [
+        'summary_marks' => 'Oznaczono jako nieznalezione :marked, przywrócono :restored.',
         'done' => 'Skanowanie zakończone',
         'summary' => 'Znaleziono :found, utworzono :created, uzupełniono :filled, usunięto :pruned, pominięto :skipped.',
     ],
@@ -59,5 +66,11 @@ return [
     ],
     'switcher' => [
         'label' => 'Język',
+    ],
+    'status' => [
+        'label' => 'Status',
+        'ok' => 'OK',
+        'missing' => 'Brak tłumaczenia',
+        'orphaned' => 'Brak w kodzie',
     ],
 ];

@@ -44,13 +44,16 @@ class TranslationManagerPlugin implements Plugin
 
     protected ?bool $quickTranslate = null;
 
-    protected ?string $navigationGroup = null;
+    protected string|Closure|null $navigationGroup = null;
 
     protected ?int $navigationSort = null;
 
     protected ?string $navigationIcon = null;
 
-    protected ?string $navigationLabel = null;
+    protected string|Closure|null $navigationLabel = null;
+
+    /** @var class-string<TranslationResource>|false|null */
+    protected string|false|null $resource = null;
 
     protected ?bool $navigationBadge = null;
 
@@ -92,7 +95,11 @@ class TranslationManagerPlugin implements Plugin
             Locales::override($this->locales);
         }
 
-        $panel->resources([TranslationResource::class]);
+        $resource = $this->getResourceClass();
+
+        if ($resource !== false) {
+            $panel->resources([$resource]);
+        }
 
         if ($this->isQuickTranslateEnabled()) {
             $panel->pages([QuickTranslate::class]);
@@ -108,6 +115,27 @@ class TranslationManagerPlugin implements Plugin
         if ($this->isLanguageSwitcherEnabled()) {
             Support\LocaleSwitcher::apply();
         }
+    }
+
+    /**
+     * The resource registered on the panel. A host that subclasses {@see TranslationResource} (to add a column, hide
+     * "create", restrict the query) passes its class here, or `false` when its own resource is discovered by the panel.
+     *
+     * @param class-string<TranslationResource>|false|null $resource
+     */
+    public function resource(string|false|null $resource): static
+    {
+        $this->resource = $resource;
+
+        return $this;
+    }
+
+    /**
+     * @return class-string<TranslationResource>|false
+     */
+    public function getResourceClass(): string|false
+    {
+        return $this->resource ?? TranslationResource::class;
     }
 
     // ---- locales -----------------------------------------------------------------------------------------
@@ -229,7 +257,10 @@ class TranslationManagerPlugin implements Plugin
 
     // ---- navigation --------------------------------------------------------------------------------------
 
-    public function navigationGroup(?string $group): static
+    /**
+     * A string, or a closure for a translated group label (resolved when the navigation is built, not at boot).
+     */
+    public function navigationGroup(string|Closure|null $group): static
     {
         $this->navigationGroup = $group;
 
@@ -239,6 +270,7 @@ class TranslationManagerPlugin implements Plugin
     public function getNavigationGroup(): ?string
     {
         $group = $this->navigationGroup ?? config('filament-translation-manager.navigation.group');
+        $group = $group instanceof Closure ? $group() : $group;
 
         return is_string($group) ? $group : null;
     }
@@ -269,7 +301,7 @@ class TranslationManagerPlugin implements Plugin
         return $this->navigationIcon ?? (string) config('filament-translation-manager.navigation.icon', 'heroicon-o-language');
     }
 
-    public function navigationLabel(?string $label): static
+    public function navigationLabel(string|Closure|null $label): static
     {
         $this->navigationLabel = $label;
 
@@ -278,7 +310,9 @@ class TranslationManagerPlugin implements Plugin
 
     public function getNavigationLabel(): ?string
     {
-        return $this->navigationLabel;
+        $label = $this->navigationLabel instanceof Closure ? ($this->navigationLabel)() : $this->navigationLabel;
+
+        return is_string($label) ? $label : null;
     }
 
     /**

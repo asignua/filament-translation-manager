@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Asignua\FilamentTranslationManager\Support;
 
+use Closure;
 use Locale;
 
 /**
@@ -13,6 +14,19 @@ final class Locales
 {
     /** @var array<string, array{code: string, name: string, flag: string|null}>|null */
     private static ?array $override = null;
+
+    private static ?Closure $resolver = null;
+
+    /**
+     * The locales from a closure, read on every call (a host whose language list can change after boot passes it
+     * here instead of a config value). Same shapes as `locales()`. The plugin's `locales()` still wins.
+     *
+     * @param (Closure(): array<array-key, mixed>)|null $resolver
+     */
+    public static function resolveUsing(?Closure $resolver): void
+    {
+        self::$resolver = $resolver;
+    }
 
     /**
      * @param array<array-key, mixed>|null $locales
@@ -29,6 +43,10 @@ final class Locales
     {
         if (self::$override !== null) {
             return self::$override;
+        }
+
+        if (self::$resolver !== null) {
+            return self::normalise((self::$resolver)());
         }
 
         $configured = config('filament-translation-manager.locales') ?? config('filament-translation-manager.available_locales');

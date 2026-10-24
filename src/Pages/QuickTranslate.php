@@ -192,7 +192,7 @@ class QuickTranslate extends Page
      */
     protected function missing(): \Illuminate\Database\Eloquent\Builder
     {
-        return $this->model()::query()->missingIn((string) $this->locale);
+        return $this->model()::query()->inManagedGroups()->missingIn((string) $this->locale);
     }
 
     /**

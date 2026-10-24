@@ -20,10 +20,16 @@ return [
         'file_default' => 'Valor del archivo: :text',
     ],
     'filters' => [
+        'orphaned' => 'No encontrado en el código',
+        'confirmed' => 'Confirmadas',
         'missing_in' => 'Falta en',
         'missing_any' => 'Falta en algún idioma',
     ],
     'actions' => [
+        'confirm' => 'Confirmar',
+        'unconfirm' => 'Quitar confirmación',
+        'prune_mark' => 'Marcar también las filas que ya no se encuentran',
+        'prune_mark_help' => 'Marca las filas cuya clave ya no está en el código ni en los archivos lang (siguen en la tabla y la marca se quita cuando la clave vuelve). No se borra nada.',
         'quick_translate' => 'Traducción rápida',
         'scan' => 'Escanear código',
         'scan_description' => 'Encuentra las cadenas __(), trans(), trans_choice(), @lang y Lang::get() y tus archivos de idioma, y añade las filas que faltan. Los textos editados nunca se sobrescriben.',
@@ -39,6 +45,7 @@ return [
         'file' => 'Archivo',
     ],
     'scan' => [
+        'summary_marks' => ':marked marcadas como no encontradas, :restored restauradas.',
         'done' => 'Escaneo terminado',
         'summary' => 'Encontradas :found, creadas :created, completadas :filled, eliminadas :pruned, omitidas :skipped.',
     ],
@@ -59,5 +66,11 @@ return [
     ],
     'switcher' => [
         'label' => 'Idioma',
+    ],
+    'status' => [
+        'label' => 'Estado',
+        'ok' => 'OK',
+        'missing' => 'Falta',
+        'orphaned' => 'No está en el código',
     ],
 ];

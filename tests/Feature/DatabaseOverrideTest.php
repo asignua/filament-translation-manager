@@ -121,7 +121,7 @@ class DatabaseOverrideTest extends TestCase
 
     public function test_the_text_of_one_locale_does_not_fall_back(): void
     {
-        $row = $this->make('*', 'Only english', ['en' => 'Only english']);
+        $row = $this->make('*', 'Only english', ['en' => 'English only']);
 
         $this->assertNull($row->textFor('de'));
         $this->assertTrue($row->isMissingIn('de'));

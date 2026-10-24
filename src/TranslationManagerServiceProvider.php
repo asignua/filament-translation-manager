@@ -22,7 +22,7 @@ class TranslationManagerServiceProvider extends PackageServiceProvider
             ->hasTranslations()
             ->hasViews()
             ->hasRoute('web')
-            ->hasMigrations(['create_language_lines_table', 'add_scan_columns_to_language_lines_table'])
+            ->hasMigrations(['create_language_lines_table', 'add_scan_columns_to_language_lines_table', 'add_status_columns_to_language_lines_table'])
             ->hasCommand(ScanCommand::class);
     }
 

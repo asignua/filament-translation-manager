@@ -125,6 +125,8 @@ class SynchronizerTest extends TestCase
 
     public function test_prune_deletes_only_scanner_created_rows_that_are_gone(): void
     {
+        config(['filament-translation-manager.prune.mode' => 'delete']);
+
         Synchronizer::make()->sync();
 
         $manual = new Translation;
@@ -145,7 +147,7 @@ class SynchronizerTest extends TestCase
 
     public function test_prune_without_the_scanned_only_guard_takes_manual_rows_too(): void
     {
-        config(['filament-translation-manager.prune.only_scanned' => false]);
+        config(['filament-translation-manager.prune.mode' => 'delete', 'filament-translation-manager.prune.only_scanned' => false]);
 
         $manual = new Translation;
         $manual->group = '*';
@@ -161,6 +163,8 @@ class SynchronizerTest extends TestCase
 
     public function test_a_key_still_present_in_a_lang_file_survives_prune(): void
     {
+        config(['filament-translation-manager.prune.mode' => 'delete']);
+
         Synchronizer::make()->sync();
 
         unlink($this->project.'/views/shop.blade.php');
@@ -184,6 +188,8 @@ class SynchronizerTest extends TestCase
 
     public function test_the_scan_command_reports_and_supports_dry_run(): void
     {
+        config(['filament-translation-manager.prune.mode' => 'delete']);
+
         $this->artisan('translation-manager:scan', ['--dry-run' => true])->assertSuccessful();
         $this->assertSame(0, Translation::query()->count());
 
@@ -193,5 +199,102 @@ class SynchronizerTest extends TestCase
         unlink($this->project.'/app/Thing.php');
         $this->artisan('translation-manager:scan', ['--prune' => true])->assertSuccessful();
         $this->assertNull($this->row('*', 'From code'));
+    }
+
+    public function test_prune_marks_rows_that_are_gone_by_default_and_deletes_nothing(): void
+    {
+        Synchronizer::make()->sync();
+
+        $manual = new Translation;
+        $manual->group = '*';
+        $manual->key = 'Typed by hand';
+        $manual->text = ['en' => 'Typed by hand'];
+        $manual->save();
+
+        unlink($this->project.'/app/Thing.php');
+
+        $result = Synchronizer::make()->sync(prune: true);
+
+        $this->assertSame(0, $result->pruned);
+        // Marking is not limited to rows the scanner created.
+        $this->assertSame(2, $result->marked);
+        $this->assertTrue($this->row('*', 'From code')->isOrphaned());
+        $this->assertTrue($this->row('*', 'Typed by hand')->isOrphaned());
+        $this->assertFalse($this->row('*', 'Add to basket')->isOrphaned());
+        $this->assertStringContainsString('2', $result->summary());
+    }
+
+    public function test_a_marked_row_is_restored_when_the_key_comes_back_even_without_prune(): void
+    {
+        Synchronizer::make()->sync();
+        $this->writeFile('app/Thing.php', "<?php __('pkg::group.key');");
+        Synchronizer::make()->sync(prune: true);
+        $this->assertTrue($this->row('*', 'From code')->isOrphaned());
+
+        $this->writeFile('app/Thing.php', "<?php __('From code');");
+        $result = Synchronizer::make()->sync();
+
+        $this->assertSame(1, $result->restored);
+        $this->assertFalse($this->row('*', 'From code')->isOrphaned());
+        $this->assertNull($this->row('*', 'From code')->orphaned_at);
+    }
+
+    public function test_marking_is_skipped_in_a_dry_run(): void
+    {
+        Synchronizer::make()->sync();
+        unlink($this->project.'/app/Thing.php');
+
+        $result = Synchronizer::make()->sync(prune: true, dryRun: true);
+
+        $this->assertSame(1, $result->marked);
+        $this->assertFalse($this->row('*', 'From code')->isOrphaned());
+    }
+
+    public function test_without_status_columns_the_mark_mode_falls_back_to_delete(): void
+    {
+        config(['filament-translation-manager.status.enabled' => false]);
+        Synchronizer::make()->sync();
+        unlink($this->project.'/app/Thing.php');
+
+        $result = Synchronizer::make()->sync(prune: true);
+
+        $this->assertSame(1, $result->pruned);
+        $this->assertNull($this->row('*', 'From code'));
+    }
+
+    public function test_the_scan_is_limited_to_the_configured_groups(): void
+    {
+        config(['filament-translation-manager.groups' => ['*']]);
+
+        $result = Synchronizer::make()->sync();
+
+        $this->assertNull($this->row('messages', 'title'));
+        $this->assertNotNull($this->row('*', 'From code'));
+        $this->assertSame(3, $result->created);
+    }
+
+    public function test_every_locale_can_get_the_key_as_a_placeholder(): void
+    {
+        config(['filament-translation-manager.scan.fill_all_locales_with_key' => true]);
+
+        Synchronizer::make()->sync();
+
+        $this->assertSame(['en' => 'From code', 'uk' => 'From code', 'de' => 'From code'], $this->row('*', 'From code')->text);
+        // A real file text still wins over the placeholder.
+        $this->assertSame('Додати в кошик', $this->row('*', 'Add to basket')->text['uk']);
+        // A group key is not a sentence: no placeholder.
+        $this->assertSame(['en' => 'Deep'], $this->row('messages', 'nested.deep')->text);
+    }
+
+    public function test_group_like_keys_can_be_skipped(): void
+    {
+        config(['filament-translation-manager.scan.skip_group_like_keys' => true]);
+        $this->writeFile('app/Ee.php', "<?php __('ee.Save'); __('ee.Publish in this language'); __('e.g. this');");
+
+        Synchronizer::make()->sync();
+
+        $this->assertNull($this->row('*', 'ee.Save'));
+        $this->assertNull($this->row('*', 'ee.Publish in this language'));
+        $this->assertNotNull($this->row('*', 'e.g. this'));
     }
 }

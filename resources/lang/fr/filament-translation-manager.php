@@ -20,10 +20,16 @@ return [
         'file_default' => 'Valeur du fichier : :text',
     ],
     'filters' => [
+        'orphaned' => 'Introuvable dans le code',
+        'confirmed' => 'Confirmées',
         'missing_in' => 'Manquant en',
         'missing_any' => 'Manquant dans une langue',
     ],
     'actions' => [
+        'confirm' => 'Confirmer',
+        'unconfirm' => 'Retirer la confirmation',
+        'prune_mark' => 'Marquer aussi les lignes introuvables',
+        'prune_mark_help' => 'Marque les lignes dont la clé a disparu du code et des fichiers lang (elles restent dans le tableau et la marque disparaît quand la clé revient). Rien n’est supprimé.',
         'quick_translate' => 'Traduction rapide',
         'scan' => 'Analyser le code',
         'scan_description' => 'Trouve les chaînes __(), trans(), trans_choice(), @lang et Lang::get() ainsi que vos fichiers de langue, puis ajoute les lignes manquantes. Les textes modifiés ne sont jamais écrasés.',
@@ -39,6 +45,7 @@ return [
         'file' => 'Fichier',
     ],
     'scan' => [
+        'summary_marks' => ':marked marquées comme introuvables, :restored rétablies.',
         'done' => 'Analyse terminée',
         'summary' => ':found trouvées, :created créées, :filled complétées, :pruned supprimées, :skipped ignorées.',
     ],
@@ -59,5 +66,11 @@ return [
     ],
     'switcher' => [
         'label' => 'Langue',
+    ],
+    'status' => [
+        'label' => 'Statut',
+        'ok' => 'OK',
+        'missing' => 'Manquant',
+        'orphaned' => 'Absent du code',
     ],
 ];

@@ -26,6 +26,18 @@ return [
     'model' => Translation::class,
 
     /*
+     * The table behind the model. `language_lines` is spatie's own; a host with a table prefix (`ee_translations`)
+     * changes it here. Used by the default model and by the published migration stubs.
+     */
+    'table' => 'language_lines',
+
+    /*
+     * Limit everything the plugin shows and scans to these groups (`['*']` = only the JSON-style keys of `__('Hello')`).
+     * `null` = every group.
+     */
+    'groups' => null,
+
+    /*
      * Gate abilities. A gate that is NOT defined denies everybody. Set `gate` to `use-translation-manager`
      * to keep the kenepa/translation-manager ability.
      */
@@ -44,6 +56,21 @@ return [
         'session_key' => 'translation-manager.locale',
     ],
 
+    /*
+     * Row status. `confirmed_at` ("an editor checked this row, it is right as it is") takes a row out of "missing";
+     * `orphaned_at` is set by the scan when it no longer finds the key. Both are nullable columns added by the
+     * `add_status_columns_to_language_lines_table` migration stub. `false` = no status column, no status filters.
+     */
+    'status' => [
+        'enabled' => true,
+    ],
+
+    'missing' => [
+        // A text equal to the key counts as missing too (a scan seeds the key as a placeholder text). A confirmed
+        // row is never missing.
+        'value_equal_to_key' => true,
+    ],
+
     'quick_translate' => [
         'enabled' => true,
     ],
@@ -58,10 +85,21 @@ return [
         'include_lang_files' => true,
         // JSON-style rows get the key itself as the text of the default locale, so they are not "missing" there.
         'fill_default_locale_with_key' => true,
+        // ... or in EVERY locale (the placeholder is then the key everywhere; pair it with `missing.value_equal_to_key`).
+        // Useful when a missing locale must not fall back to another language's text at run time.
+        'fill_all_locales_with_key' => false,
+        // Skip JSON-style keys that look like an unknown `group.item` identifier (`auth.failed`, `ee.Save`, `ee.Publish in this
+        // language`): a lang key whose file does not exist is not a sentence worth a row.
+        'skip_group_like_keys' => false,
     ],
 
     'prune' => [
-        // `--prune` deletes only rows the scanner created itself; false = any row of a scanned group.
+        // What `--prune` does with a row whose key is gone from the code and the lang files:
+        //  - `mark`   sets `orphaned_at` (and clears it when the key is found again). Nothing is deleted - strings built
+        //             at run time (`__($key)`) cannot be found. Needs `status.enabled`; without it the mode is `delete`.
+        //  - `delete` deletes the row (see `only_scanned`).
+        'mode' => 'mark',
+        // `delete` mode: delete only rows the scanner created itself; false = any row of a scanned group.
         'only_scanned' => true,
     ],
 
