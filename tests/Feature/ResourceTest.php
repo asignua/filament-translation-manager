@@ -126,8 +126,8 @@ class ResourceTest extends TestCase
             ->assertHasNoFormErrors();
 
         $row->refresh();
-        // A cleared field removes the locale again (it is "missing", not an empty string).
-        $this->assertSame(['uk' => 'Вітаю', 'de' => 'Hallo'], $row->text);
+        // A cleared field is null (it is "missing", not an empty string, and a scan will not refill it).
+        $this->assertSame(['en' => null, 'uk' => 'Вітаю', 'de' => 'Hallo'], $row->text);
         // A new request starts with an empty in-memory translator; only the persistent cache could still be stale.
         app('translator')->setLoaded([]);
         $this->assertSame('Вітаю', __('Hello', [], 'uk'));

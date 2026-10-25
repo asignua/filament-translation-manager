@@ -12,6 +12,7 @@ use BackedEnum;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Livewire\Attributes\Locked;
 use UnitEnum;
 
 /**
@@ -25,6 +26,8 @@ class QuickTranslate extends Page
 
     public ?string $locale = null;
 
+    // Locked: the id comes back from the browser, and editing an arbitrary row by tampering with it must not work.
+    #[Locked]
     public ?int $recordId = null;
 
     public string $value = '';
@@ -143,7 +146,7 @@ class QuickTranslate extends Page
 
     public function record(): ?Translation
     {
-        return $this->recordId === null ? null : $this->model()::query()->find($this->recordId);
+        return $this->recordId === null ? null : $this->model()::query()->inManagedGroups()->find($this->recordId);
     }
 
     /**

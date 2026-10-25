@@ -13,8 +13,6 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class Synchronizer
 {
-    public const int MAX_KEY_LENGTH = 255;
-
     public function __construct(
         private readonly CodeScanner $scanner,
         private readonly LangFiles $files,
@@ -79,18 +77,27 @@ final class Synchronizer
 
         // found[id] = [group, key, [locale => file text]]
         $found = [];
+        // Keys the scan SAW but cannot write (too long): their rows exist and must not be taken for orphans.
+        $seen = [];
         $skipped = 0;
 
         foreach ($this->scanner->literals() as $literal) {
             $pair = $resolver->resolve($literal);
 
-            if ($pair === null || strlen($pair[1]) > self::MAX_KEY_LENGTH || ($skipGroupLike && $pair[0] === '*' && KeyResolver::looksLikeGroupKey($pair[1]))) {
+            if ($pair !== null && $managed !== null && !in_array($pair[0], $managed, true)) {
+                continue;
+            }
+
+            if ($pair !== null && Writes::keyTooLong($pair[1])) {
+                $seen[$this->id($pair[0], $pair[1])] = true;
                 $skipped++;
 
                 continue;
             }
 
-            if ($managed !== null && !in_array($pair[0], $managed, true)) {
+            if ($pair === null || ($skipGroupLike && $pair[0] === '*' && KeyResolver::looksLikeGroupKey($pair[1]))) {
+                $skipped++;
+
                 continue;
             }
 
@@ -107,7 +114,8 @@ final class Synchronizer
                     }
 
                     foreach ($lines as $key => $value) {
-                        if (strlen($key) > self::MAX_KEY_LENGTH) {
+                        if (Writes::keyTooLong((string) $key)) {
+                            $seen[$this->id((string) $group, (string) $key)] = true;
                             $skipped++;
 
                             continue;
@@ -136,15 +144,15 @@ final class Synchronizer
         $created = 0;
         $filled = 0;
 
-        foreach ($found as $id => [$group, $key, $fileTexts]) {
-            $row = $rows[$id] ?? null;
+        $write = static function (array $entry) use (&$created, &$filled, &$skipped, $rows, $locales, $default, $fillDefault, $fillAll, $model, $dryRun): void {
+            [$group, $key, $fileTexts] = $entry;
+            $row = $rows[$group."\0".$key] ?? null;
             $text = $row === null ? [] : ($row->text ?? []);
             $changed = false;
 
             foreach ($locales as $locale) {
-                $current = $text[$locale] ?? null;
-
-                if (is_string($current) && $current !== '') {
+                // A locale the row HAS - even as null, which is how an editor's "cleared" is stored - is a decision, not a gap.
+                if (array_key_exists($locale, $text)) {
                     continue;
                 }
 
@@ -158,16 +166,19 @@ final class Synchronizer
             }
 
             if ($row === null) {
-                $created++;
+                if ($dryRun) {
+                    $created++;
 
-                if (!$dryRun) {
-                    $row = new $model;
-                    $row->group = $group;
-                    $row->key = $key;
-                    $row->text = $text;
-                    $row->created_by_scan = true;
-                    $row->save();
+                    return;
                 }
+
+                $row = new $model;
+                $row->group = $group;
+                $row->key = $key;
+                $row->text = $text;
+                $row->created_by_scan = true;
+
+                Writes::insert($row) ? $created++ : $skipped++;
             } elseif ($changed) {
                 $filled++;
 
@@ -176,22 +187,31 @@ final class Synchronizer
                     $row->save();
                 }
             }
+        };
+
+        if ($dryRun) {
+            foreach ($found as $entry) {
+                $write($entry);
+            }
+        } else {
+            Writes::chunked($model, $found, $write);
         }
 
         $pruned = 0;
         $marked = 0;
         $restored = 0;
+        $present = static fn (string $id): bool => isset($found[$id]) || isset($seen[$id]);
+
+        // Rows to touch, then written in chunks (each in a transaction, one cache flush at the end).
+        /** @var array<string, array{0: Translation, 1: string}> $changes row + what to do: restore / mark / delete */
+        $changes = [];
 
         if (Translation::statusEnabled()) {
             // A key that is found again is no longer an orphan, with or without --prune.
             foreach ($rows as $id => $row) {
-                if (isset($found[$id]) && $row->orphaned_at !== null) {
+                if ($present($id) && $row->orphaned_at !== null) {
                     $restored++;
-
-                    if (!$dryRun) {
-                        $row->orphaned_at = null;
-                        $row->save();
-                    }
+                    $changes[$id] = [$row, 'restore'];
                 }
             }
         }
@@ -199,29 +219,34 @@ final class Synchronizer
         if ($prune && self::marksOrphans()) {
             // Non-destructive: every scanned row takes part (not only the ones the scanner created) and nothing is deleted.
             foreach ($rows as $id => $row) {
-                if (!isset($found[$id]) && $row->orphaned_at === null) {
+                if (!$present($id) && $row->orphaned_at === null) {
                     $marked++;
-
-                    if (!$dryRun) {
-                        $row->orphaned_at = now();
-                        $row->save();
-                    }
+                    $changes[$id] = [$row, 'mark'];
                 }
             }
         } elseif ($prune) {
             $onlyScanned = (bool) config('filament-translation-manager.prune.only_scanned', true);
 
             foreach ($rows as $id => $row) {
-                if (isset($found[$id]) || ($onlyScanned && !$row->created_by_scan)) {
+                if ($present($id) || ($onlyScanned && !$row->created_by_scan)) {
                     continue;
                 }
 
                 $pruned++;
-
-                if (!$dryRun) {
-                    $row->delete();
-                }
+                $changes[$id] = [$row, 'delete'];
             }
+        }
+
+        if (!$dryRun) {
+            Writes::chunked($model, $changes, static function (array $change): void {
+                [$row, $action] = $change;
+
+                match ($action) {
+                    'restore' => $row->forceFill(['orphaned_at' => null])->save(),
+                    'mark' => $row->forceFill(['orphaned_at' => now()])->save(),
+                    default => $row->delete(),
+                };
+            });
         }
 
         return new SyncResult(count($found), $created, $filled, $pruned, $skipped, $marked, $restored);

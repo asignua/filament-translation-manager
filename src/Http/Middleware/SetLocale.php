@@ -10,8 +10,8 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Applies the locale picked in the language switcher. The plugin applies it itself when the panel boots; add this
- * middleware (after StartSession) to ->middleware([...], isPersistent: true) for routes outside the panel.
+ * Applies the locale picked in the language switcher. The plugin adds it to the panel's auth middleware (persistent, so
+ * Livewire updates get it too); add it after StartSession to routes outside the panel.
  */
 class SetLocale
 {

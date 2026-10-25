@@ -4,6 +4,17 @@ All notable changes to `asignua/filament-translation-manager` are documented her
 
 ## Unreleased
 
+- Keys are byte-exact: the create stub makes `group`/`key` `utf8mb4_bin` on MySQL/MariaDB (a `make_language_lines_keys_binary` stub fixes an existing table), so
+  the unique pair agrees with the scan's comparison. A duplicate the database still refuses is skipped and counted, not fatal.
+- Scan and import write in chunks of 200, each in a transaction, and flush spatie's cache once per group at the end
+  (`Translation::deferringCacheFlush()`); model events still fire per row.
+- `scan.max_key_length` (characters, `null` = unlimited); a key skipped for its length never orphans its row.
+- Import/export/quick translate respect `groups` (and `skip_group_like_keys`); `QuickTranslate::$recordId` is locked and the lookup scoped;
+  `import.max_size` limits the uploaded file.
+- A locale an editor cleared is stored as `null`; the scan fills only locales a row does not have, so it never refills a cleared one.
+- The language switcher applies the locale through the panel's persistent auth middleware (after the session starts), not in `boot()`.
+- Search looks at the key and `text->locale` of every configured locale (not the raw JSON); the record title of a `*` row is just the key.
+
 - Row status: `confirmed_at` (an editor vouches for the row; never "missing") and `orphaned_at` (the scan no longer finds the key)
   via the `add_status_columns_to_language_lines_table` migration stub; status badge, "Not found in code" / "Confirmed" filters,
   Confirm / Remove confirmation action. `status.enabled` switches it all off.

@@ -6,6 +6,7 @@ namespace Asignua\FilamentTranslationManager\Models;
 
 use Asignua\FilamentTranslationManager\Casts\UnescapedJson;
 use Asignua\FilamentTranslationManager\Support\Locales;
+use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -213,20 +214,71 @@ class Translation extends LanguageLine
         }
     }
 
+    /** @var array<string, array<string, true>>|null group => locales touched, while a bulk write defers the cache flush */
+    private static ?array $deferred = null;
+
+    /**
+     * Runs a bulk write (scan, import) and flushes spatie's cache ONCE per touched group at the end, instead of once per
+     * saved row. Model events (and with them the activity log) still fire for every row.
+     *
+     * @template T
+     *
+     * @param Closure(): T $callback
+     *
+     * @return T
+     */
+    public static function deferringCacheFlush(Closure $callback): mixed
+    {
+        if (self::$deferred !== null) {
+            return $callback();
+        }
+
+        self::$deferred = [];
+
+        try {
+            return $callback();
+        } finally {
+            $groups = self::$deferred ?? [];
+            self::$deferred = null;
+
+            foreach ($groups as $group => $locales) {
+                self::forgetGroup((string) $group, array_keys($locales));
+            }
+        }
+    }
+
     /**
      * Spatie flushes only the locales present in the CURRENT text. A locale that was just cleared (or never
      * configured) would keep serving the old string from the cache, so every plausible locale is flushed.
      */
     public function flushGroupCache(): void
     {
+        if (self::$deferred !== null) {
+            foreach (array_keys($this->text ?? []) as $locale) {
+                self::$deferred[$this->group][(string) $locale] = true;
+            }
+
+            self::$deferred[$this->group] ??= [];
+
+            return;
+        }
+
+        self::forgetGroup($this->group, array_map('strval', array_keys($this->text ?? [])));
+    }
+
+    /**
+     * @param list<string> $locales
+     */
+    private static function forgetGroup(string $group, array $locales): void
+    {
         $locales = array_merge(
-            array_keys($this->text ?? []),
+            $locales,
             Locales::codes(),
             [(string) config('app.locale'), (string) config('app.fallback_locale')],
         );
 
         foreach (array_unique($locales) as $locale) {
-            Cache::forget(static::getCacheKey($this->group, (string) $locale));
+            Cache::forget(static::getCacheKey($group, (string) $locale));
         }
     }
 }

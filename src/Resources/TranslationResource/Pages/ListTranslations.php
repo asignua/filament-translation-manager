@@ -125,6 +125,7 @@ class ListTranslations extends ListRecords
                     ->helperText(__('filament-translation-manager::filament-translation-manager.actions.import_help'))
                     ->acceptedFileTypes(['application/json', 'text/plain', '.json'])
                     ->storeFiles(false)
+                    ->maxSize((int) config('filament-translation-manager.import.max_size', 2048))
                     ->required(),
                 Toggle::make('overwrite')
                     ->label(__('filament-translation-manager::filament-translation-manager.actions.overwrite')),

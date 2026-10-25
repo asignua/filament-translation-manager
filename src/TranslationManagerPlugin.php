@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Asignua\FilamentTranslationManager;
 
+use Asignua\FilamentTranslationManager\Http\Middleware\SetLocale;
 use Asignua\FilamentTranslationManager\Models\Translation;
 use Asignua\FilamentTranslationManager\Pages\QuickTranslate;
 use Asignua\FilamentTranslationManager\Resources\TranslationResource;
@@ -106,16 +107,15 @@ class TranslationManagerPlugin implements Plugin
         }
 
         if ($this->isLanguageSwitcherEnabled()) {
+            // After StartSession whatever order the host lists its middleware in: the auth middleware runs inside the
+            // panel's middleware group. (Applying the locale in boot() ran before the session was started, so a full page
+            // load never got it.) Persistent: Livewire updates apply it too.
+            $panel->authMiddleware([SetLocale::class], isPersistent: true);
             $panel->renderHook(PanelsRenderHook::USER_MENU_BEFORE, static fn (): string => view('filament-translation-manager::language-switcher')->render());
         }
     }
 
-    public function boot(Panel $panel): void
-    {
-        if ($this->isLanguageSwitcherEnabled()) {
-            Support\LocaleSwitcher::apply();
-        }
-    }
+    public function boot(Panel $panel): void {}
 
     /**
      * The resource registered on the panel. A host that subclasses {@see TranslationResource} (to add a column, hide

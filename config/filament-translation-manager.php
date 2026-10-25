@@ -85,6 +85,9 @@ return [
         // `'known'`: the file texts only fill the rows of keys the CODE uses (a key only in a file gets no row and is not "found",
         // so `--prune` still marks it); `false`: do not read the files.
         'include_lang_files' => true,
+        // The longest key a row may have, in CHARACTERS. 255 = the default `key` column (varchar(255)); `null` = unlimited
+        // (a host whose key column is TEXT). Longer keys are skipped and counted, and their existing rows are not orphaned.
+        'max_key_length' => 255,
         // JSON-style rows get the key itself as the text of the default locale, so they are not "missing" there.
         'fill_default_locale_with_key' => true,
         // ... or in EVERY locale (the placeholder is then the key everywhere; pair it with `missing.value_equal_to_key`).
@@ -103,6 +106,11 @@ return [
         'mode' => 'mark',
         // `delete` mode: delete only rows the scanner created itself; false = any row of a scanned group.
         'only_scanned' => true,
+    ],
+
+    'import' => [
+        // The largest import file, in kilobytes.
+        'max_size' => 2048,
     ],
 
     'navigation' => [

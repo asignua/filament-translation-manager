@@ -19,8 +19,14 @@ return new class extends Migration
             $table->id();
             // Index key length (utf8mb4, 4 bytes per character): the unique pair is (255 + 255) * 4 = 2040 bytes,
             // below the 3072 limit of InnoDB. A test guards it - SQLite would not complain.
-            $table->string('group');
-            $table->string('key');
+            //
+            // The two key columns are BINARY on MySQL/MariaDB (`utf8mb4_bin`): with the default `*_ci` collation the unique
+            // pair treats `Email`/`email` and `Hello`/`Hello ` as one key, while the scan and the import compare bytes - the
+            // second insert would then fail with error 1062 in the middle of a run. A key is case- and space-exact.
+            $binary = in_array(Schema::getConnection()->getDriverName(), ['mysql', 'mariadb'], true);
+
+            $table->string('group')->collation($binary ? 'utf8mb4_bin' : null);
+            $table->string('key')->collation($binary ? 'utf8mb4_bin' : null);
             $table->json('text');
             $table->timestamps();
 

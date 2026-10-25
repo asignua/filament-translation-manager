@@ -51,7 +51,7 @@ php artisan migrate
 ```
 
 The migrations are publishable stubs. The first creates the `language_lines` table the way spatie's own migration does, and
-**does nothing when the table already exists**, so do not also publish spatie's. The second adds the column `--prune` uses to
+**does nothing when the table already exists**, so do not also publish spatie's. The fourth (`make_language_lines_keys_binary`) makes the key columns case- and space-exact on MySQL/MariaDB for a table that already exists; the second adds the column `--prune` uses to
 tell scanner-created rows from yours, the third the nullable `confirmed_at` / `orphaned_at` status columns (skip it and set
 `status.enabled` to `false` if you do not want the status). Optionally publish the config (`--tag=filament-translation-manager-config`).
 
@@ -136,7 +136,7 @@ plugin uses `app.locale` and `app.fallback_locale`.
 
 Config keys: `table`, `groups`, `status.enabled`, `missing.value_equal_to_key`, `locales` (alias `available_locales`), `default_locale`, `model`, `gate`, `delete_gate`, `language_switcher`,
 `language_switcher_options.{user_column,session_key}`, `quick_translate.enabled`, `scan.{paths,extensions,exclude,include_lang_files,fill_default_locale_with_key,fill_all_locales_with_key,skip_group_like_keys}`,
-`prune.{mode,only_scanned}`, `navigation.{group,sort,icon,badge}`.
+`scan.max_key_length`, `import.max_size`, `prune.{mode,only_scanned}`, `navigation.{group,sort,icon,badge}`.
 
 ### Wrapping the plugin in a host
 

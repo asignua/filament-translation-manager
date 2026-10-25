@@ -30,7 +30,7 @@ final class TranslationTransfer
         $map = [];
 
         /** @var \Illuminate\Database\Eloquent\Collection<int, Translation> $rows */
-        $rows = $model::query()->orderBy('group')->orderBy('key')->get();
+        $rows = $model::query()->inManagedGroups()->orderBy('group')->orderBy('key')->get();
 
         foreach ($rows as $row) {
             $text = $row->textFor($locale);
@@ -62,6 +62,8 @@ final class TranslationTransfer
         $model = $this->model();
         $existing = [];
         $groups = [];
+        $managed = $model::managedGroups();
+        $skipGroupLike = (bool) config('filament-translation-manager.scan.skip_group_like_keys', false);
 
         /** @var \Illuminate\Database\Eloquent\Collection<int, Translation> $rows */
         $rows = $model::query()->get();
@@ -76,44 +78,61 @@ final class TranslationTransfer
 
         $resolver = new KeyResolver(array_values(array_unique(array_merge(array_map('strval', array_keys($groups)), (new LangFiles)->groups()))));
         $result = ['created' => 0, 'updated' => 0, 'skipped' => 0];
+        $todo = [];
 
         foreach ($map as $address => $value) {
             $pair = $resolver->resolve((string) $address);
 
-            if ($pair === null || !is_string($value) || $value === '' || strlen($pair[1]) > Synchronizer::MAX_KEY_LENGTH) {
+            if (
+                $pair === null
+                || !is_string($value)
+                || $value === ''
+                || Writes::keyTooLong($pair[1])
+                || ($managed !== null && !in_array($pair[0], $managed, true))
+                || ($skipGroupLike && $pair[0] === '*' && KeyResolver::looksLikeGroupKey($pair[1]))
+            ) {
                 $result['skipped']++;
 
                 continue;
             }
 
-            $row = $existing[$pair[0]."\0".$pair[1]] ?? null;
+            $todo[$pair[0]."\0".$pair[1]] = [$pair[0], $pair[1], $value];
+        }
+
+        Writes::chunked($model, $todo, function (array $item, string $id) use ($model, $locale, $overwrite, &$existing, &$result): void {
+            [$group, $key, $value] = $item;
+            $row = $existing[$id] ?? null;
 
             if ($row === null) {
                 $row = new $model;
-                $row->group = $pair[0];
-                $row->key = $pair[1];
+                $row->group = $group;
+                $row->key = $key;
                 $row->text = [$locale => $value];
-                $row->save();
-                $existing[$pair[0]."\0".$pair[1]] = $row;
-                $result['created']++;
 
-                continue;
+                if (Writes::insert($row)) {
+                    $existing[$id] = $row;
+                    $result['created']++;
+                } else {
+                    $result['skipped']++;
+                }
+
+                return;
             }
 
             if (!$overwrite && $row->textFor($locale) !== null) {
                 $result['skipped']++;
 
-                continue;
+                return;
             }
 
             if ($row->textFor($locale) === $value) {
-                continue;
+                return;
             }
 
             $row->text = array_merge($row->text ?? [], [$locale => $value]);
             $row->save();
             $result['updated']++;
-        }
+        });
 
         return $result;
     }

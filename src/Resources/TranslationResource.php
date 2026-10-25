@@ -121,7 +121,7 @@ class TranslationResource extends Resource
 
     public static function getRecordTitle(?Model $record): string
     {
-        return $record instanceof Translation ? $record->group.'.'.$record->key : static::getModelLabel();
+        return $record instanceof Translation ? ($record->group === '*' ? $record->key : $record->group.'.'.$record->key) : static::getModelLabel();
     }
 
     /**
@@ -257,9 +257,11 @@ class TranslationResource extends Resource
     }
 
     /**
-     * LIKE over the key and the JSON text. `!` escapes the wildcards: SQLite has no default escape character,
-     * and MySQL's `\` would need doubling. The SQL is a fixed template with grammar-quoted columns; the user's
-     * text only travels as a binding.
+     * LIKE over the key and the text of every configured locale. The texts are searched by JSON path (`text->uk`, which
+     * the query builder compiles per driver and which also decodes legacy `\uXXXX` rows), never over the raw JSON: that
+     * would match the locale codes (`uk`, `en`) themselves and miss escaped text. `!` escapes the wildcards: SQLite has
+     * no default escape character, and MySQL's `\` would need doubling. The SQL is a fixed template with grammar-quoted
+     * columns; the user's text only travels as a binding.
      *
      * @param Builder<Translation> $query
      *
@@ -269,11 +271,18 @@ class TranslationResource extends Resource
     {
         $term = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $search).'%';
         $grammar = $query->getQuery()->getGrammar();
-        $key = $grammar->wrap('key')." like ? escape '!'";
-        $text = $grammar->wrap('text')." like ? escape '!'";
+        $columns = [$grammar->wrap('key')];
 
-        /** @phpstan-ignore argument.type, argument.type */
-        return $query->where(fn (Builder $q) => $q->whereRaw($key, [$term])->orWhereRaw($text, [$term]));
+        foreach (Locales::codes() as $code) {
+            $columns[] = $grammar->wrap('text->'.$code);
+        }
+
+        return $query->where(function (Builder $q) use ($columns, $term): void {
+            foreach ($columns as $column) {
+                /** @phpstan-ignore argument.type */
+                $q->orWhereRaw($column." like ? escape '!'", [$term]);
+            }
+        });
     }
 
     public static function table(Table $table): Table

@@ -1,0 +1,45 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+/**
+ * For a table that already exists (spatie's own, or one created before the key columns were binary): makes `group` and
+ * `key` case- and space-exact on MySQL/MariaDB, so the unique pair agrees with the byte comparison the scan and the
+ * import do. Skipped on other drivers and for a `key` that is TEXT (no unique index there). Rows that differ only by case
+ * cannot exist under a `*_ci` unique index, so the change never collides.
+ */
+return new class extends Migration
+{
+    public function up(): void
+    {
+        $table = $this->table();
+
+        if (!in_array(Schema::getConnection()->getDriverName(), ['mysql', 'mariadb'], true) || !Schema::hasTable($table)) {
+            return;
+        }
+
+        foreach (['group', 'key'] as $column) {
+            $type = strtolower((string) collect(Schema::getColumns($table))->firstWhere('name', $column)['type_name'] ?? '');
+
+            if ($type !== 'varchar') {
+                continue;
+            }
+
+            DB::statement(sprintf('ALTER TABLE `%s` MODIFY `%s` VARCHAR(255) COLLATE utf8mb4_bin NOT NULL', $table, $column));
+        }
+    }
+
+    public function down(): void
+    {
+        // A collation change is not worth reverting: binary keys are a stricter, safe superset.
+    }
+
+    private function table(): string
+    {
+        return (string) config('filament-translation-manager.table', 'language_lines');
+    }
+};

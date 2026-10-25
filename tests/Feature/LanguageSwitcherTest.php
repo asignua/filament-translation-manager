@@ -34,13 +34,11 @@ class LanguageSwitcherTest extends TestCase
         $this->assertNull(session('translation-manager.locale'));
     }
 
-    public function test_the_choice_is_applied_when_the_panel_boots(): void
+    public function test_the_locale_middleware_is_on_the_panels_auth_middleware(): void
     {
-        $this->withSession(['translation-manager.locale' => 'uk']);
+        $panel = Filament::getPanel('admin');
 
-        Filament::getPanel('admin')->getPlugin(TranslationManagerPlugin::ID)->boot(Filament::getPanel('admin'));
-
-        $this->assertSame('uk', app()->getLocale());
+        $this->assertContains(\Asignua\FilamentTranslationManager\Http\Middleware\SetLocale::class, $panel->getAuthMiddleware());
     }
 
     public function test_a_stale_locale_in_the_session_is_ignored(): void

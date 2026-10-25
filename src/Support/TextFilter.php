@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace Asignua\FilamentTranslationManager\Support;
 
 /**
- * A cleared field removes the locale from the row (so it counts as "missing" again) instead of storing "".
+ * A cleared field does not store "": the locale becomes `null` when the row had it (so it counts as "missing" and a later
+ * scan sees an EXPLICIT choice and does not refill it with the key), and is simply left out when the row never had it.
  * Texts of locales that are not configured (no field in the form) survive an edit.
  */
 final class TextFilter
 {
     /**
-     * @param array<string, mixed>       $data
-     * @param array<string, string>|null $existing the stored text of the row being edited
+     * @param array<string, mixed>            $data
+     * @param array<string, string|null>|null $existing the stored text of the row being edited
      *
      * @return array<string, mixed>
      */
@@ -20,10 +21,17 @@ final class TextFilter
     {
         $text = is_array($data['text'] ?? null) ? $data['text'] : [];
 
-        $text = array_filter(
-            $text,
-            static fn (mixed $value): bool => is_string($value) && trim($value) !== '',
-        );
+        $kept = [];
+
+        foreach ($text as $locale => $value) {
+            if (is_string($value) && trim($value) !== '') {
+                $kept[$locale] = $value;
+            } elseif (array_key_exists($locale, $existing ?? [])) {
+                $kept[$locale] = null;
+            }
+        }
+
+        $text = $kept;
 
         foreach ($existing ?? [] as $locale => $value) {
             if (!array_key_exists($locale, Locales::all())) {
