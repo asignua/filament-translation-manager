@@ -56,7 +56,11 @@ final class Synchronizer
         $fillDefault = (bool) config('filament-translation-manager.scan.fill_default_locale_with_key', true);
         $fillAll = (bool) config('filament-translation-manager.scan.fill_all_locales_with_key', false);
         $skipGroupLike = (bool) config('filament-translation-manager.scan.skip_group_like_keys', false);
-        $includeFiles = (bool) config('filament-translation-manager.scan.include_lang_files', true);
+        // true: every key of the lang files becomes a row; 'known': the file texts only fill rows whose key the CODE uses
+        // (a key that lives in a file but nowhere in the code stays out, and is not "found").
+        $filesMode = config('filament-translation-manager.scan.include_lang_files', true);
+        $includeFiles = $filesMode !== false;
+        $codeOnly = $filesMode === 'known';
         $managed = $model::managedGroups();
 
         /** @var \Illuminate\Database\Eloquent\Collection<int, Translation> $existing */
@@ -93,6 +97,8 @@ final class Synchronizer
             $found[$this->id($pair[0], $pair[1])] ??= [$pair[0], $pair[1], []];
         }
 
+        $fileLines = [];
+
         if ($includeFiles) {
             foreach ($locales as $locale) {
                 foreach ($this->files->lines($locale) as $group => $lines) {
@@ -107,10 +113,23 @@ final class Synchronizer
                             continue;
                         }
 
-                        $found[$this->id((string) $group, $key)] ??= [(string) $group, $key, []];
-                        $found[$this->id((string) $group, $key)][2][$locale] = $value;
+                        $id = $this->id((string) $group, $key);
+
+                        if ($codeOnly) {
+                            $fileLines[$id] ??= [(string) $group, $key, []];
+                            $fileLines[$id][2][$locale] = $value;
+                        } else {
+                            $found[$id] ??= [(string) $group, $key, []];
+                            $found[$id][2][$locale] = $value;
+                        }
                     }
                 }
+            }
+        }
+
+        if ($codeOnly) {
+            foreach ($found as $id => $entry) {
+                $found[$id][2] = $fileLines[$id][2] ?? [];
             }
         }
 

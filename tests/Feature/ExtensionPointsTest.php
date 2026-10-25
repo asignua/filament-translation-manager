@@ -8,6 +8,7 @@ use Asignua\FilamentTranslationManager\Models\Translation;
 use Asignua\FilamentTranslationManager\Pages\QuickTranslate;
 use Asignua\FilamentTranslationManager\Resources\TranslationResource;
 use Asignua\FilamentTranslationManager\Resources\TranslationResource\Pages\ListTranslations;
+use Asignua\FilamentTranslationManager\Resources\TranslationResource\Pages\ListTranslations as PluginListTranslations;
 use Asignua\FilamentTranslationManager\Support\Locales;
 use Asignua\FilamentTranslationManager\Tests\TestCase;
 use Asignua\FilamentTranslationManager\TranslationManagerPlugin;
@@ -139,4 +140,29 @@ class ExtensionPointsTest extends TestCase
             Locales::resolveUsing(null);
         }
     }
+
+    public function test_the_create_button_follows_the_resources_can_create(): void
+    {
+        $visible = collect(Livewire::test(ListTranslations::class)->instance()->getCachedHeaderActions())
+            ->first(fn ($action): bool => $action->getName() === 'create');
+        $this->assertTrue($visible->isVisible());
+
+        // The header actions are built without rendering the page (a page of a resource that is not registered has no route).
+        $closed = collect((fn (): array => $this->getHeaderActions())->call(new ClosedListTranslations))
+            ->first(fn ($action): bool => $action->getName() === 'create');
+        $this->assertFalse($closed->isVisible());
+    }
+}
+
+class ClosedTranslationResource extends TranslationResource
+{
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+}
+
+class ClosedListTranslations extends PluginListTranslations
+{
+    protected static string $resource = ClosedTranslationResource::class;
 }

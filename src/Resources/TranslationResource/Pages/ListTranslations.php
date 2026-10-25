@@ -32,7 +32,7 @@ class ListTranslations extends ListRecords
             $this->scanAction(),
             $this->exportAction(),
             $this->importAction(),
-            CreateAction::make(),
+            CreateAction::make()->visible(fn (): bool => static::getResource()::canCreate()),
         ];
     }
 

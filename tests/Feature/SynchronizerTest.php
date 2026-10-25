@@ -297,4 +297,19 @@ class SynchronizerTest extends TestCase
         $this->assertNull($this->row('*', 'ee.Publish in this language'));
         $this->assertNotNull($this->row('*', 'e.g. this'));
     }
+
+    public function test_known_mode_uses_file_texts_only_for_keys_the_code_uses(): void
+    {
+        config(['filament-translation-manager.scan.include_lang_files' => 'known']);
+        $this->writeFile('lang/uk.json', '{"Add to basket": "Додати в кошик", "Only in the file": "Тільки у файлі"}');
+
+        $result = Synchronizer::make()->sync();
+
+        $this->assertSame('Додати в кошик', $this->row('*', 'Add to basket')->text['uk']);
+        $this->assertNull($this->row('*', 'Only in the file'));
+        // The group file keys are not rows either: the code never asks for `messages.nested.deep`.
+        $this->assertNull($this->row('messages', 'nested.deep'));
+        $this->assertNotNull($this->row('messages', 'title'));
+        $this->assertSame(4, $result->created);
+    }
 }

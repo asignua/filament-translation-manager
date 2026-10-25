@@ -81,7 +81,9 @@ return [
         'extensions' => ['php'],
         // Folders skipped anywhere below the scan paths.
         'exclude' => ['vendor', 'node_modules', 'tests', 'storage', 'cache'],
-        // Also read the project's lang files (php groups and JSON) into the table.
+        // Also read the project's lang files (php groups and JSON) into the table. `true`: every key of the files becomes a row;
+        // `'known'`: the file texts only fill the rows of keys the CODE uses (a key only in a file gets no row and is not "found",
+        // so `--prune` still marks it); `false`: do not read the files.
         'include_lang_files' => true,
         // JSON-style rows get the key itself as the text of the default locale, so they are not "missing" there.
         'fill_default_locale_with_key' => true,
