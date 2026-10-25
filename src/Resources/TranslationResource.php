@@ -230,9 +230,13 @@ class TranslationResource extends Resource
                 });
         }
 
-        return $schema->components([
+        // One column: the texts are the point of the page and need the full width; a two-column layout squeezed them
+        // next to a mostly empty identity box.
+        $singleGroup = count(static::translationModel()::managedGroups() ?? []) === 1;
+
+        return $schema->columns(1)->components([
             Section::make(__('filament-translation-manager::filament-translation-manager.form.identity'))
-                ->columns(2)
+                ->columns($singleGroup ? 1 : 2)
                 ->schema([
                     TextInput::make('group')
                         ->label(__('filament-translation-manager::filament-translation-manager.table.group'))
@@ -240,7 +244,12 @@ class TranslationResource extends Resource
                         ->required()
                         ->maxLength(255)
                         ->default(static fn (): string => static::translationModel()::managedGroups()[0] ?? '*')
-                        ->disabled(static fn (string $operation): bool => $operation === 'edit' || count(static::translationModel()::managedGroups() ?? []) === 1),
+                        ->disabled(static fn (string $operation): bool => $operation === 'edit' || count(static::translationModel()::managedGroups() ?? []) === 1)
+                        // With one managed group the field has nothing to choose: hidden (and disabled), yet the value must
+                        // still reach the record on create - a disabled field is otherwise left out of the form data.
+                        ->hidden($singleGroup)
+                        ->dehydratedWhenHidden()
+                        ->dehydrated(static fn (string $operation): bool => $operation === 'create'),
                     TextInput::make('key')
                         ->label(__('filament-translation-manager::filament-translation-manager.table.key'))
                         ->required()

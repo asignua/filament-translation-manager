@@ -178,6 +178,11 @@ final class Synchronizer
                 $row->text = $text;
                 $row->created_by_scan = true;
 
+                // Nothing to translate (no letters: a phone number, a price) - confirmed right away, never "missing".
+                if (Translation::statusEnabled() && Translation::hasNothingToTranslate($key)) {
+                    $row->confirmed_at = now();
+                }
+
                 Writes::insert($row) ? $created++ : $skipped++;
             } elseif ($changed) {
                 $filled++;
@@ -214,6 +219,13 @@ final class Synchronizer
                     $changes[$id] = [$row, 'restore'];
                 }
             }
+
+            // Rows created before this rule (or by hand) whose key has nothing to translate get confirmed too.
+            foreach ($rows as $id => $row) {
+                if (!isset($changes[$id]) && $row->confirmed_at === null && Translation::hasNothingToTranslate((string) $row->key)) {
+                    $changes[$id] = [$row, 'confirm'];
+                }
+            }
         }
 
         if ($prune && self::marksOrphans()) {
@@ -244,6 +256,7 @@ final class Synchronizer
                 match ($action) {
                     'restore' => $row->forceFill(['orphaned_at' => null])->save(),
                     'mark' => $row->forceFill(['orphaned_at' => now()])->save(),
+                    'confirm' => $row->forceFill(['confirmed_at' => now()])->save(),
                     default => $row->delete(),
                 };
             });

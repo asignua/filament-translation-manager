@@ -97,6 +97,9 @@ string it has not seen. For a PHP group (`messages.checkout.title`) the file tex
 scan did not find the key). A text that equals the key counts as missing too (`missing.value_equal_to_key`, on by default):
 that is the placeholder a scan leaves for a string nobody translated yet. When such a text is right on purpose (a brand
 name, a word that is the same in every language) press **Confirm** in the row menu; a confirmed row is never missing.
+The language the keys are written in (`missing.source_locale`, default `app.fallback_locale`) is exempt: there the key
+is the text (`Collection` in English). A key without a single letter (a phone number, a price) has nothing to translate:
+the scan confirms it by itself.
 Filters: Missing in…, Missing in any locale, Not found in code, Confirmed.
 
 **Find the gaps.** Filter **Missing in** and pick a language, or use **Missing in any language**. The navigation badge
@@ -134,7 +137,7 @@ TranslationManagerPlugin::make()
 `locales` also accepts a list of codes (`['en', 'uk']`; the name comes from `intl`) or a `code => name` map. Without it the
 plugin uses `app.locale` and `app.fallback_locale`.
 
-Config keys: `table`, `groups`, `status.enabled`, `missing.value_equal_to_key`, `locales` (alias `available_locales`), `default_locale`, `model`, `gate`, `delete_gate`, `language_switcher`,
+Config keys: `table`, `groups`, `status.enabled`, `missing.value_equal_to_key`, `missing.source_locale`, `locales` (alias `available_locales`), `default_locale`, `model`, `gate`, `delete_gate`, `language_switcher`,
 `language_switcher_options.{user_column,session_key}`, `quick_translate.enabled`, `scan.{paths,extensions,exclude,include_lang_files,fill_default_locale_with_key,fill_all_locales_with_key,skip_group_like_keys}`,
 `scan.max_key_length`, `import.max_size`, `prune.{mode,only_scanned}`, `navigation.{group,sort,icon,badge}`.
 

@@ -39,8 +39,28 @@ class StatusTest extends TestCase
 
         $this->assertSame([$placeholder->id], Translation::query()->missingIn('uk')->pluck('id')->all());
         $this->assertSame([$placeholder->id], Translation::query()->missingInAny()->pluck('id')->all());
-        // The source locale equals the key as well, which is how a JSON row starts out.
-        $this->assertSame([$placeholder->id], Translation::query()->missingIn('en')->pluck('id')->all());
+        // In the language the keys are written in (app.fallback_locale = en here) the key IS the text.
+        $this->assertFalse($placeholder->isMissingIn('en'));
+        $this->assertSame([], Translation::query()->missingIn('en')->pluck('id')->all());
+    }
+
+    public function test_the_source_locale_is_configurable(): void
+    {
+        config(['filament-translation-manager.missing.source_locale' => 'uk']);
+        $row = $this->make('*', 'Додати', ['en' => 'Додати', 'uk' => 'Додати', 'de' => 'Hinzufügen']);
+
+        $this->assertFalse($row->isMissingIn('uk'));
+        $this->assertTrue($row->isMissingIn('en'));
+        $this->assertSame([$row->id], Translation::query()->missingIn('en')->pluck('id')->all());
+        $this->assertSame([], Translation::query()->missingIn('uk')->pluck('id')->all());
+    }
+
+    public function test_a_key_without_letters_has_nothing_to_translate(): void
+    {
+        $this->assertTrue(Translation::hasNothingToTranslate('+38 067 660 1330'));
+        $this->assertTrue(Translation::hasNothingToTranslate('→ 100%'));
+        $this->assertFalse(Translation::hasNothingToTranslate('+ Додати ще'));
+        $this->assertFalse(Translation::hasNothingToTranslate('Collection'));
     }
 
     public function test_the_key_comparison_can_be_turned_off(): void

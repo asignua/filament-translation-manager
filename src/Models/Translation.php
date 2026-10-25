@@ -65,6 +65,33 @@ class Translation extends LanguageLine
     }
 
     /**
+     * The language the keys are written in (config `missing.source_locale`, default app.fallback_locale): there a text
+     * equal to the key IS the translation ("Collection" in English), so it never counts as missing.
+     */
+    public static function sourceLocale(): ?string
+    {
+        $locale = config('filament-translation-manager.missing.source_locale') ?? config('app.fallback_locale');
+
+        return is_string($locale) && $locale !== '' ? $locale : null;
+    }
+
+    /**
+     * Whether a text equal to the key counts as missing in this locale.
+     */
+    public static function keyAsTextIsMissingIn(string $locale): bool
+    {
+        return static::valueEqualToKeyIsMissing() && $locale !== static::sourceLocale();
+    }
+
+    /**
+     * A key without a single letter (a phone number, a price, "→") has nothing to translate.
+     */
+    public static function hasNothingToTranslate(string $key): bool
+    {
+        return preg_match('/\p{L}/u', $key) !== 1;
+    }
+
+    /**
      * The groups the plugin works with (config `groups`), or null for all of them.
      *
      * @return list<string>|null
@@ -99,7 +126,7 @@ class Translation extends LanguageLine
 
         $text = $this->textFor($locale);
 
-        return $text === null || (static::valueEqualToKeyIsMissing() && $text === $this->key);
+        return $text === null || (static::keyAsTextIsMissingIn($locale) && $text === $this->key);
     }
 
     /**
@@ -154,10 +181,10 @@ class Translation extends LanguageLine
     {
         $path = 'text->'.$locale;
 
-        $query->where(function (Builder $query) use ($path): void {
+        $query->where(function (Builder $query) use ($path, $locale): void {
             $query->whereNull($path)->orWhere($path, '');
 
-            if (static::valueEqualToKeyIsMissing()) {
+            if (static::keyAsTextIsMissingIn($locale)) {
                 $query->orWhereColumn($path, 'key');
             }
         });

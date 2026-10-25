@@ -1,0 +1,2 @@
+{"base":"http://host.docker.internal:8777","login":{"path":"/admin/login","email":"emma@example.com","password":"password"},
+ "shots":[{"path":"/admin/translations/1/edit","stamp":false,"out":"edit.jpg","theme":"dark"}]}

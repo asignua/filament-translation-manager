@@ -69,6 +69,9 @@ return [
         // A text equal to the key counts as missing too (a scan seeds the key as a placeholder text). A confirmed
         // row is never missing.
         'value_equal_to_key' => true,
+        // The language the keys are written in: there a text equal to the key is the translation itself
+        // ("Collection" in English). null = app.fallback_locale.
+        'source_locale' => null,
     ],
 
     'quick_translate' => [

@@ -312,4 +312,18 @@ class SynchronizerTest extends TestCase
         $this->assertNotNull($this->row('messages', 'title'));
         $this->assertSame(4, $result->created);
     }
+
+    public function test_a_scan_confirms_keys_without_letters(): void
+    {
+        $phone = new Translation;
+        $phone->group = '*';
+        $phone->key = '+38 067 660 1330';
+        $phone->text = ['en' => '+38 067 660 1330', 'uk' => '+38 067 660 1330'];
+        $phone->save();
+
+        Synchronizer::make()->sync();
+
+        $this->assertNotNull($phone->fresh()?->confirmed_at);
+        $this->assertFalse($phone->fresh()?->isMissing());
+    }
 }

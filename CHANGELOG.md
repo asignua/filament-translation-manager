@@ -2,6 +2,13 @@
 
 All notable changes to `asignua/filament-translation-manager` are documented here.
 
+## v1.1.0 - 2026-10-25
+- A text equal to the key is no longer "missing" in the language the keys are written in (`missing.source_locale`,
+  default `app.fallback_locale`): "Collection" in English is the translation, not a placeholder.
+- Keys without a single letter (phone numbers, prices, symbols) are confirmed by the scan: nothing to translate.
+- The edit form is one column (identity above the texts, both full width); with a single managed group the Group field
+  is hidden. Fixed: creating a row with a single managed group failed on `NOT NULL group` (the disabled field was not saved).
+
 ## v1.0.0 - 2026-10-25
 - Keys are byte-exact: the create stub makes `group`/`key` `utf8mb4_bin` on MySQL/MariaDB (a `make_language_lines_keys_binary` stub fixes an existing table), so
   the unique pair agrees with the scan's comparison. A duplicate the database still refuses is skipped and counted, not fatal.

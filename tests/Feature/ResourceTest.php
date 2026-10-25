@@ -114,6 +114,25 @@ class ResourceTest extends TestCase
             ->assertCanNotSeeTableRecords([$json]);
     }
 
+    public function test_with_one_managed_group_the_group_field_is_hidden_and_still_saved(): void
+    {
+        config(['filament-translation-manager.groups' => ['*']]);
+        $row = $this->make('*', 'Hello', ['en' => 'Hello', 'uk' => 'Привіт']);
+
+        Livewire::test(EditTranslation::class, ['record' => $row->getKey()])
+            ->assertFormFieldIsHidden('group')
+            ->assertFormFieldIsVisible('key')
+            ->assertFormFieldIsVisible('text.uk');
+
+        Livewire::test(CreateTranslation::class)
+            ->assertFormFieldIsHidden('group')
+            ->fillForm(['key' => 'Bye', 'text.uk' => 'Бувай'])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame('*', Translation::query()->where('key', 'Bye')->value('group'));
+    }
+
     public function test_editing_saves_texts_and_flushes_the_served_translation(): void
     {
         $row = $this->make('*', 'Hello', ['en' => 'Hello', 'uk' => 'Привіт']);
