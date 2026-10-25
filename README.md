@@ -2,7 +2,7 @@
 
 [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://stand-with-ukraine.pp.ua)
 
-<img class="filament-hidden" src="https://raw.githubusercontent.com/asignua/filament-translation-manager/main/art/cover.jpg" alt="Filament Translation Manager">
+<img class="filament-hidden" src="https://raw.githubusercontent.com/asignua/filament-translation-manager/v1.0.0/art/cover.jpg" alt="Filament Translation Manager">
 
 [![Tests](https://img.shields.io/github/actions/workflow/status/asignua/filament-translation-manager/tests.yml?branch=main&label=tests)](https://github.com/asignua/filament-translation-manager/actions/workflows/tests.yml)
 
@@ -29,12 +29,12 @@ same gate and the same config keys, so an existing project moves over without to
 
 ## Screenshots
 
-![The translations table](https://raw.githubusercontent.com/asignua/filament-translation-manager/main/art/table.jpg)
-![The language switcher in the top bar](https://raw.githubusercontent.com/asignua/filament-translation-manager/main/art/switcher.jpg)
-![Quick translate](https://raw.githubusercontent.com/asignua/filament-translation-manager/main/art/quick-translate.jpg)
+![The translations table](https://raw.githubusercontent.com/asignua/filament-translation-manager/v1.0.0/art/table.jpg)
+![The language switcher in the top bar](https://raw.githubusercontent.com/asignua/filament-translation-manager/v1.0.0/art/switcher.jpg)
+![Quick translate](https://raw.githubusercontent.com/asignua/filament-translation-manager/v1.0.0/art/quick-translate.jpg)
 
-![Quick translate in dark mode](https://raw.githubusercontent.com/asignua/filament-translation-manager/main/art/quick-translate-dark.jpg)
-![The edit form](https://raw.githubusercontent.com/asignua/filament-translation-manager/main/art/edit.jpg)
+![Quick translate in dark mode](https://raw.githubusercontent.com/asignua/filament-translation-manager/v1.0.0/art/quick-translate-dark.jpg)
+![The edit form](https://raw.githubusercontent.com/asignua/filament-translation-manager/v1.0.0/art/edit.jpg)
 
 ## Requirements
 

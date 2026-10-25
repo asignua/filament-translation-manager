@@ -2,8 +2,7 @@
 
 All notable changes to `asignua/filament-translation-manager` are documented here.
 
-## Unreleased
-
+## v1.0.0 - 2026-10-25
 - Keys are byte-exact: the create stub makes `group`/`key` `utf8mb4_bin` on MySQL/MariaDB (a `make_language_lines_keys_binary` stub fixes an existing table), so
   the unique pair agrees with the scan's comparison. A duplicate the database still refuses is skipped and counted, not fatal.
 - Scan and import write in chunks of 200, each in a transaction, and flush spatie's cache once per group at the end
