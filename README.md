@@ -250,6 +250,15 @@ Log in at `/admin` as `emma@example.com` / `password`.
 
 See [CHANGELOG.md](CHANGELOG.md).
 
+## More plugins by asign
+
+- [Translatable Fields](https://filamentphp.com/plugins/asign-translatable-fields) — locale tabs for spatie/laravel-translatable forms
+- [SEO Files](https://filamentphp.com/plugins/asign-seo-files) — sitemap, robots.txt and llms.txt
+- [Themes](https://filamentphp.com/plugins/asign-themes) — per-user and per-panel colour themes
+- [Rich Editor Toolkit](https://filamentphp.com/plugins/asign-rich-editor-toolkit) — paste cleanup, attributes and video links in the rich editor
+
+All plugins: <https://filamentphp.com/plugins?q=asign>
+
 ## License
 
 The MIT License (MIT). See [LICENSE.md](LICENSE.md).
