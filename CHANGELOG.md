@@ -2,6 +2,10 @@
 
 All notable changes to `asignua/filament-translation-manager` are documented here.
 
+## v1.2.0 - 2026-11-10
+
+- Requires Filament ^5.11.2; replaced deprecated Filament API calls: Requires Filament ^5.11.2; no deprecated Filament API is used (verified with phpstan-deprecation-rules).
+
 ## v1.1.0 - 2026-10-25
 - A text equal to the key is no longer "missing" in the language the keys are written in (`missing.source_locale`,
   default `app.fallback_locale`): "Collection" in English is the translation, not a placeholder.
